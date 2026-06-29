@@ -1,0 +1,29 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Handle API requests
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php?path=$1 [QSA,L]
+    
+    # CORS headers
+    <IfModule mod_headers.c>
+        Header set Access-Control-Allow-Origin "%{HTTP_ORIGIN}e" env=CORS_ORIGIN
+        Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Header set Access-Control-Allow-Headers "Content-Type, X-CSRF-Token, X-Requested-With"
+        Header set Access-Control-Allow-Credentials true
+    </IfModule>
+</IfModule>
+
+# Security headers
+<FilesMatch "\.(json|log)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Set API-specific headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
