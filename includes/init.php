@@ -8,20 +8,80 @@
  * @version 1.0.0
  */
 
-// Load configuration
+// Load configuration FIRST
 require_once __DIR__ . '/config.php';
 
 // Define constants for directories
 define('CONTROLLERS_PATH', __DIR__ . '/controllers');
 
-// Load core classes
-require_once __DIR__ . '/database.php';
+// Set error reporting based on environment
+if (ENVIRONMENT === 'development') {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    error_reporting(0);
+    ini_set('display_errors', 0);
+}
+
+// Set default timezone
+date_default_timezone_set(DEFAULT_TIMEZONE);
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// ============================================
+// AUTOLOADER - Load classes on demand
+// ============================================
+spl_autoload_register(function($class) {
+    // Only handle FocusedTube namespace
+    if (strpos($class, 'FocusedTube\\') !== 0) {
+        return;
+    }
+    
+    // Remove namespace prefix
+    $relative_class = substr($class, strlen('FocusedTube\\'));
+    
+    // Convert namespace separators to directory separators
+    $file = __DIR__ . '/' . str_replace('\\', '/', $relative_class) . '.php';
+    
+    // Also check in controllers directory
+    if (!file_exists($file)) {
+        $file = __DIR__ . '/controllers/' . str_replace('\\', '/', $relative_class) . '.php';
+    }
+    
+    if (file_exists($file)) {
+        require_once $file;
+    }
+});
+
+// ============================================
+// LOAD CORE CLASSES (in correct order)
+// ============================================
+
+// First load Security class (no dependencies)
 require_once __DIR__ . '/security.php';
-require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/template.php';
-require_once __DIR__ . '/router.php';
+
+// Then load Database class (depends on Security for some methods)
+require_once __DIR__ . '/database.php';
+
+// Load Cache class (depends on config constants)
 require_once __DIR__ . '/cache.php';
+
+// Load Auth class (depends on Database and Security)
+require_once __DIR__ . '/auth.php';
+
+// Load Template class (depends on Security)
+require_once __DIR__ . '/template.php';
+
+// Load Router class (depends on Template)
+require_once __DIR__ . '/router.php';
+
+// Load YouTubeAPI class (depends on Cache)
 require_once __DIR__ . '/youtube.php';
+
+// Load functions (global helper functions)
 require_once __DIR__ . '/functions.php';
 
 // Load database helper functions if needed
@@ -29,13 +89,16 @@ if (file_exists(__DIR__ . '/helpers.php')) {
     require_once __DIR__ . '/helpers.php';
 }
 
-// Set security headers
-Security::setSecurityHeaders();
+// ============================================
+// INITIALIZE CORE COMPONENTS
+// ============================================
 
-// Initialize session if not started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+use FocusedTube\Security;
+use FocusedTube\Database;
+use FocusedTube\Auth;
+
+// Set security headers (now Security class is loaded)
+Security::setSecurityHeaders();
 
 // Regenerate session ID periodically
 if (!isset($_SESSION['session_regenerated'])) {
@@ -48,8 +111,8 @@ if (!isset($_SESSION['session_regenerated'])) {
 
 // Initialize database
 global $db, $auth;
-$db = new \FocusedTube\Database();
-$auth = new \FocusedTube\Auth();
+$db = new Database();
+$auth = new Auth();
 
 // Load settings
 $settings = $db->read('settings.json');
@@ -78,17 +141,20 @@ if (isset($settings['maintenance']['enabled']) && $settings['maintenance']['enab
     }
 }
 
-// Set default timezone
+// Set default timezone from settings
 if (isset($settings['general']['timezone'])) {
     date_default_timezone_set($settings['general']['timezone']);
 }
 
 // CSRF token for forms
 if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_SESSION['csrf_token'] = Security::generateCsrfToken();
 }
 
-// Define helper function for CSRF
+// ============================================
+// DEFINE GLOBAL HELPER FUNCTIONS
+// ============================================
+
 if (!function_exists('csrf_field')) {
     function csrf_field() {
         return '<input type="hidden" name="csrf_token" value="' . $_SESSION['csrf_token'] . '">';
@@ -101,20 +167,9 @@ if (!function_exists('check_csrf')) {
     }
 }
 
-// Autoloader for classes
-spl_autoload_register(function($class) {
-    $prefix = 'FocusedTube\\';
-    $base_dir = __DIR__ . '/';
-    
-    if (strpos($class, $prefix) === 0) {
-        $relative_class = substr($class, strlen($prefix));
-        $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
-        
-        if (file_exists($file)) {
-            require_once $file;
-        }
-    }
-});
+// ============================================
+// LOGGING
+// ============================================
 
 // Log page access (except for API and assets)
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';

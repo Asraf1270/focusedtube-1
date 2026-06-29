@@ -246,8 +246,11 @@ class Security
      * @param int $timeWindow
      * @return bool
      */
-    public static function rateLimit($key, $limit = RATE_LIMIT_REQUESTS, $timeWindow = RATE_LIMIT_TIME_WINDOW)
+    public static function rateLimit($key, $limit = null, $timeWindow = null)
     {
+        $limit = $limit ?? RATE_LIMIT_REQUESTS;
+        $timeWindow = $timeWindow ?? RATE_LIMIT_TIME_WINDOW;
+        
         $rateKey = 'rate_limit_' . md5($key);
         $requests = isset($_SESSION[$rateKey]) ? $_SESSION[$rateKey] : [];
         
@@ -274,8 +277,11 @@ class Security
      * @param int $maxSize
      * @return bool|string
      */
-    public static function validateFile($file, $allowedTypes = ALLOWED_EXTENSIONS, $maxSize = MAX_UPLOAD_SIZE)
+    public static function validateFile($file, $allowedTypes = null, $maxSize = null)
     {
+        $allowedTypes = $allowedTypes ?? ALLOWED_EXTENSIONS;
+        $maxSize = $maxSize ?? MAX_UPLOAD_SIZE;
+        
         if ($file['error'] !== UPLOAD_ERR_OK) {
             return 'File upload error: ' . $file['error'];
         }
@@ -371,25 +377,26 @@ class Security
      */
     public static function setSecurityHeaders()
     {
-        // Content Security Policy
-        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.youtube.com https://www.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com https://*.googleusercontent.com; frame-src https://www.youtube.com; connect-src 'self' https://www.googleapis.com; font-src 'self';");
-        
-        // XSS Protection
-        header("X-XSS-Protection: 1; mode=block");
-        
-        // Content Type Options
-        header("X-Content-Type-Options: nosniff");
-        
-        // Referrer Policy
-        header("Referrer-Policy: strict-origin-when-cross-origin");
-        
-        // Feature Policy
-        header("Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()");
-        
-        // HSTS (only in production)
-        if (ENVIRONMENT === 'production') {
-            header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+        // Content Security Policy (relaxed for YouTube embeds)
+        if (!headers_sent()) {
+            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.ytimg.com https://*.googleusercontent.com https://img.youtube.com; frame-src https://www.youtube.com; connect-src 'self' https://www.googleapis.com; font-src 'self';");
+            
+            // XSS Protection
+            header("X-XSS-Protection: 1; mode=block");
+            
+            // Content Type Options
+            header("X-Content-Type-Options: nosniff");
+            
+            // Referrer Policy
+            header("Referrer-Policy: strict-origin-when-cross-origin");
+            
+            // Feature Policy
+            header("Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()");
+            
+            // HSTS (only in production)
+            if (ENVIRONMENT === 'production') {
+                header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+            }
         }
     }
 }
-?>
