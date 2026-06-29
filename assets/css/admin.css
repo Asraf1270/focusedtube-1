@@ -1,0 +1,718 @@
+/**
+ * FocusedTube - Admin Panel Stylesheet
+ * 
+ * Professional admin interface styling
+ * 
+ * @package FocusedTube
+ * @version 1.0.0
+ */
+
+/* ==================== Admin Variables ==================== */
+:root {
+    --admin-sidebar-width: 260px;
+    --admin-header-height: 64px;
+    --admin-bg: #F1F5F9;
+    --admin-card-bg: #FFFFFF;
+    --admin-sidebar-bg: #0F172A;
+    --admin-sidebar-text: #94A3B8;
+    --admin-sidebar-active: #FF3D00;
+}
+
+[data-theme="dark"] {
+    --admin-bg: #0F172A;
+    --admin-card-bg: #1E293B;
+    --admin-sidebar-bg: #0A0F1A;
+}
+
+/* ==================== Admin Layout ==================== */
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background: var(--admin-bg);
+}
+
+.admin-sidebar {
+    width: var(--admin-sidebar-width);
+    background: var(--admin-sidebar-bg);
+    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: var(--z-modal);
+    transition: transform var(--transition-normal);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.admin-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+    background: var(--admin-sidebar-text);
+    border-radius: var(--radius-full);
+}
+
+.admin-sidebar-brand {
+    padding: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    color: white;
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-bold);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidebar-brand img {
+    height: 32px;
+    width: auto;
+}
+
+.admin-sidebar-brand .brand-text {
+    color: var(--primary-color);
+}
+
+.admin-sidebar-menu {
+    padding: var(--spacing-md) 0;
+    list-style: none;
+}
+
+.admin-sidebar-menu .menu-item {
+    margin-bottom: var(--spacing-xs);
+}
+
+.admin-sidebar-menu .menu-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    color: var(--admin-sidebar-text);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    border-left: 3px solid transparent;
+    font-size: var(--font-size-sm);
+}
+
+.admin-sidebar-menu .menu-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.admin-sidebar-menu .menu-link.active {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    border-left-color: var(--primary-color);
+}
+
+.admin-sidebar-menu .menu-link .icon {
+    width: 20px;
+    text-align: center;
+    font-size: var(--font-size-lg);
+}
+
+.admin-sidebar-menu .menu-link .badge {
+    margin-left: auto;
+    background: var(--primary-color);
+    color: white;
+    font-size: var(--font-size-xs);
+    padding: 2px var(--spacing-sm);
+    border-radius: var(--radius-full);
+}
+
+.admin-sidebar-menu .menu-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: var(--spacing-md) var(--spacing-lg);
+}
+
+.admin-sidebar-menu .menu-label {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    color: var(--admin-sidebar-text);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+}
+
+.admin-main {
+    flex: 1;
+    margin-left: var(--admin-sidebar-width);
+    min-height: 100vh;
+}
+
+/* ==================== Admin Header ==================== */
+.admin-header {
+    background: var(--admin-card-bg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    height: var(--admin-header-height);
+}
+
+.admin-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.admin-header-left .toggle-sidebar {
+    background: none;
+    border: none;
+    font-size: var(--font-size-xl);
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.admin-header-left .toggle-sidebar:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.admin-header-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-semibold);
+}
+
+.admin-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.admin-header-right .admin-user {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-full);
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.admin-header-right .admin-user:hover {
+    background: var(--bg-tertiary);
+}
+
+.admin-header-right .admin-user .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-bold);
+    font-size: var(--font-size-sm);
+}
+
+.admin-header-right .admin-user .name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-medium);
+}
+
+.admin-header-right .admin-user .role {
+    font-size: var(--font-size-xs);
+    color: var(--text-tertiary);
+}
+
+/* ==================== Admin Content ==================== */
+.admin-content {
+    padding: var(--spacing-lg);
+}
+
+/* ==================== Stats Cards ==================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.stat-card {
+    background: var(--admin-card-bg);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: 0 1px 3px var(--shadow-color);
+    transition: all var(--transition-normal);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px var(--shadow-md);
+}
+
+.stat-card .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-md);
+}
+
+.stat-card .stat-icon.primary {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.stat-card .stat-icon.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success-color);
+}
+
+.stat-card .stat-icon.warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+}
+
+.stat-card .stat-icon.info {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info-color);
+}
+
+.stat-card .stat-number {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-card .stat-label {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.stat-card .stat-change {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-sm);
+    padding: 2px var(--spacing-sm);
+    border-radius: var(--radius-sm);
+}
+
+.stat-card .stat-change.up {
+    color: var(--success-color);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.stat-card .stat-change.down {
+    color: var(--error-color);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* ==================== Admin Tables ==================== */
+.table-container {
+    background: var(--admin-card-bg);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 1px 3px var(--shadow-color);
+}
+
+.table-header {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.table-header h3 {
+    margin: 0;
+}
+
+.table-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+.admin-table thead {
+    background: var(--bg-secondary);
+}
+
+.admin-table th {
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    font-weight: var(--font-semibold);
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.admin-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:hover {
+    background: var(--bg-secondary);
+}
+
+.admin-table .status-badge {
+    display: inline-block;
+    padding: 2px var(--spacing-sm);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-medium);
+}
+
+.admin-table .status-badge.active {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success-color);
+}
+
+.admin-table .status-badge.inactive {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
+}
+
+.admin-table .status-badge.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+}
+
+.admin-table .table-actions-cell {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.admin-table .table-actions-cell button {
+    padding: var(--spacing-xs);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: var(--font-size-sm);
+}
+
+.admin-table .table-actions-cell .btn-edit {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info-color);
+}
+
+.admin-table .table-actions-cell .btn-edit:hover {
+    background: var(--info-color);
+    color: white;
+}
+
+.admin-table .table-actions-cell .btn-delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
+}
+
+.admin-table .table-actions-cell .btn-delete:hover {
+    background: var(--error-color);
+    color: white;
+}
+
+.admin-table .table-actions-cell .btn-view {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.admin-table .table-actions-cell .btn-view:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* ==================== Admin Forms ==================== */
+.admin-form {
+    max-width: 800px;
+}
+
+.admin-form .form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.admin-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+.admin-form .form-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+/* ==================== Admin Search ==================== */
+.admin-search {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.admin-search input {
+    flex: 1;
+    max-width: 400px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+}
+
+.admin-search input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+}
+
+.admin-search select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
+/* ==================== Admin Modals ==================== */
+.admin-modal .modal {
+    max-width: 700px;
+}
+
+.admin-modal .modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* ==================== Admin Responsive ==================== */
+@media (max-width: 1024px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .admin-sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .admin-main {
+        margin-left: 0;
+    }
+    
+    .admin-sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: var(--z-modal);
+    }
+    
+    .admin-sidebar-overlay.active {
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-header {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .admin-header-title {
+        font-size: var(--font-size-md);
+    }
+    
+    .admin-header-right .admin-user .name {
+        display: none;
+    }
+    
+    .admin-header-right .admin-user .role {
+        display: none;
+    }
+    
+    .admin-content {
+        padding: var(--spacing-md);
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-form .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-search {
+        flex-direction: column;
+    }
+    
+    .admin-search input {
+        max-width: 100%;
+    }
+    
+    .admin-table {
+        font-size: var(--font-size-xs);
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+}
+
+/* ==================== Admin Utilities ==================== */
+.admin-empty-state {
+    text-align: center;
+    padding: var(--spacing-3xl) var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+.admin-empty-state .empty-icon {
+    font-size: 64px;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+}
+
+.admin-empty-state h3 {
+    margin-bottom: var(--spacing-sm);
+}
+
+.admin-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-2xl);
+}
+
+.admin-loading .spinner {
+    margin-right: var(--spacing-md);
+}
+
+/* ==================== Admin Cards ==================== */
+.admin-card {
+    background: var(--admin-card-bg);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: 0 1px 3px var(--shadow-color);
+    margin-bottom: var(--spacing-lg);
+}
+
+.admin-card .card-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--spacing-md);
+}
+
+/* ==================== Admin Charts ==================== */
+.chart-container {
+    background: var(--admin-card-bg);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: 0 1px 3px var(--shadow-color);
+    margin-bottom: var(--spacing-lg);
+}
+
+.chart-container .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.chart-container .chart-wrapper {
+    height: 300px;
+    position: relative;
+}
+
+/* ==================== Admin Notifications ==================== */
+.admin-notification {
+    background: var(--admin-card-bg);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    border-left: 4px solid var(--primary-color);
+    transition: all var(--transition-fast);
+}
+
+.admin-notification:hover {
+    transform: translateX(4px);
+}
+
+.admin-notification .notif-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-xs);
+}
+
+.admin-notification .notif-title {
+    font-weight: var(--font-medium);
+}
+
+.admin-notification .notif-time {
+    font-size: var(--font-size-xs);
+    color: var(--text-tertiary);
+}
+
+.admin-notification .notif-body {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.admin-notification .notif-type {
+    display: inline-block;
+    padding: 1px var(--spacing-sm);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-medium);
+    margin-bottom: var(--spacing-xs);
+}
+
+.admin-notification .notif-type.info {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info-color);
+}
+
+.admin-notification .notif-type.warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+}
+
+.admin-notification .notif-type.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error-color);
+}
+
+.admin-notification .notif-type.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success-color);
+}
