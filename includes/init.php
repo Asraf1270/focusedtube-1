@@ -11,6 +11,9 @@
 // Load configuration
 require_once __DIR__ . '/config.php';
 
+// Define constants for directories
+define('CONTROLLERS_PATH', __DIR__ . '/controllers');
+
 // Load core classes
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/security.php';
@@ -20,9 +23,11 @@ require_once __DIR__ . '/router.php';
 require_once __DIR__ . '/cache.php';
 require_once __DIR__ . '/youtube.php';
 require_once __DIR__ . '/functions.php';
-require_once __DIR__ . '/validator.php';
-require_once __DIR__ . '/seo.php';
-require_once __DIR__ . '/pagination.php';
+
+// Load database helper functions if needed
+if (file_exists(__DIR__ . '/helpers.php')) {
+    require_once __DIR__ . '/helpers.php';
+}
 
 // Set security headers
 Security::setSecurityHeaders();
@@ -41,8 +46,12 @@ if (!isset($_SESSION['session_regenerated'])) {
     $_SESSION['session_regenerated'] = time();
 }
 
+// Initialize database
+global $db, $auth;
+$db = new \FocusedTube\Database();
+$auth = new \FocusedTube\Auth();
+
 // Load settings
-global $db;
 $settings = $db->read('settings.json');
 
 // Check maintenance mode
@@ -57,9 +66,15 @@ if (isset($settings['maintenance']['enabled']) && $settings['maintenance']['enab
     $isAdmin = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
     
     // Check if maintenance mode is enabled and user is not exempt
-    if (!$isExempt && !$isAdmin && !(isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/admin') === 0)) {
-        include ERRORS_PATH . '/maintenance.php';
-        exit;
+    $isApiRoute = strpos($_SERVER['REQUEST_URI'] ?? '', '/api') === 0;
+    $isAdminRoute = strpos($_SERVER['REQUEST_URI'] ?? '', '/admin') === 0;
+    $isLoginRoute = strpos($_SERVER['REQUEST_URI'] ?? '', '/admin/login') !== false;
+    
+    if (!$isExempt && !$isAdmin && !$isLoginRoute && !$isApiRoute) {
+        if (!strpos($_SERVER['REQUEST_URI'] ?? '', '/api')) {
+            include __DIR__ . '/../errors/maintenance.php';
+            exit;
+        }
     }
 }
 
@@ -68,70 +83,28 @@ if (isset($settings['general']['timezone'])) {
     date_default_timezone_set($settings['general']['timezone']);
 }
 
-// Load language file
-$language = $settings['general']['language'] ?? DEFAULT_LANGUAGE;
-$langFile = INCLUDES_PATH . '/lang/' . $language . '.php';
-if (file_exists($langFile)) {
-    include $langFile;
-}
-
-// Register error handler
-set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    if (error_reporting() & $errno) {
-        $error = date('Y-m-d H:i:s') . " - Error: [$errno] $errstr in $errfile on line $errline\n";
-        file_put_contents(LOGS_PATH . '/errors.log', $error, FILE_APPEND);
-        
-        if (ENVIRONMENT === 'development') {
-            echo "<pre>$error</pre>";
-        }
-    }
-});
-
-// Register exception handler
-set_exception_handler(function($exception) {
-    $error = date('Y-m-d H:i:s') . " - Exception: " . $exception->getMessage() . 
-             " in " . $exception->getFile() . " on line " . $exception->getLine() . "\n";
-    file_put_contents(LOGS_PATH . '/errors.log', $error, FILE_APPEND);
-    
-    if (ENVIRONMENT === 'development') {
-        echo "<pre>" . $exception->getTraceAsString() . "</pre>";
-    } else {
-        Template::showError('An error occurred. Please try again later.', 500);
-    }
-});
-
-// Register shutdown handler
-register_shutdown_function(function() {
-    $error = error_get_last();
-    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        $log = date('Y-m-d H:i:s') . " - Fatal Error: " . $error['message'] . 
-               " in " . $error['file'] . " on line " . $error['line'] . "\n";
-        file_put_contents(LOGS_PATH . '/errors.log', $log, FILE_APPEND);
-    }
-});
-
 // CSRF token for forms
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 // Define helper function for CSRF
-function csrf_field() {
-    return '<input type="hidden" name="csrf_token" value="' . $_SESSION['csrf_token'] . '">';
+if (!function_exists('csrf_field')) {
+    function csrf_field() {
+        return '<input type="hidden" name="csrf_token" value="' . $_SESSION['csrf_token'] . '">';
+    }
 }
 
-// Define helper function for CSRF check
-function check_csrf($token) {
-    return hash_equals($_SESSION['csrf_token'], $token);
+if (!function_exists('check_csrf')) {
+    function check_csrf($token) {
+        return hash_equals($_SESSION['csrf_token'], $token);
+    }
 }
-
-// Load database helper functions
-require_once __DIR__ . '/helpers.php';
 
 // Autoloader for classes
 spl_autoload_register(function($class) {
     $prefix = 'FocusedTube\\';
-    $base_dir = INCLUDES_PATH . '/';
+    $base_dir = __DIR__ . '/';
     
     if (strpos($class, $prefix) === 0) {
         $relative_class = substr($class, strlen($prefix));
@@ -143,14 +116,19 @@ spl_autoload_register(function($class) {
     }
 });
 
-// Log page access
-if (!defined('LOG_ACCESS')) {
-    define('LOG_ACCESS', true);
+// Log page access (except for API and assets)
+$requestUri = $_SERVER['REQUEST_URI'] ?? '';
+$excludePatterns = ['/api/', '/assets/', '/admin/api/'];
+$shouldLog = true;
+foreach ($excludePatterns as $pattern) {
+    if (strpos($requestUri, $pattern) === 0) {
+        $shouldLog = false;
+        break;
+    }
 }
 
-if (LOG_ACCESS && !isset($_SESSION['admin_logged_in'])) {
+if ($shouldLog && !isset($_SESSION['admin_logged_in'])) {
     $log = date('Y-m-d H:i:s') . " - " . Security::getClientIp() . " - " . 
-           $_SERVER['REQUEST_METHOD'] . " " . $_SERVER['REQUEST_URI'] . "\n";
-    file_put_contents(LOGS_PATH . '/access.log', $log, FILE_APPEND);
+           $_SERVER['REQUEST_METHOD'] . " " . $requestUri . "\n";
+    @file_put_contents(LOGS_PATH . '/access.log', $log, FILE_APPEND);
 }
-?>
