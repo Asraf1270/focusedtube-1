@@ -8,47 +8,13 @@
  * @version 1.0.0
  */
 
-require_once __DIR__ . '/../includes/init.php';
-
 use FocusedTube\Security;
-use FocusedTube\Template;
 
-// Get videos
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$perPage = ITEMS_PER_PAGE;
-
-global $db;
-$videos = $db->read('videos.json');
-
-// Filter only published videos
-$videos = array_filter($videos, function($video) {
-    return ($video['status'] ?? 'published') === 'published';
-});
-
-// Sort by created_at descending
-usort($videos, function($a, $b) {
-    $timeA = strtotime($a['created_at'] ?? $a['published_at'] ?? 'now');
-    $timeB = strtotime($b['created_at'] ?? $b['published_at'] ?? 'now');
-    return $timeB - $timeA;
-});
-
-// Paginate
-$totalVideos = count($videos);
-$totalPages = ceil($totalVideos / $perPage);
-$page = max(1, min($page, $totalPages));
-$offset = ($page - 1) * $perPage;
-$paginatedVideos = array_slice($videos, $offset, $perPage);
-$hasMore = $page < $totalPages;
-
-// Set meta
-$metaTitle = APP_NAME . ' - Watch, Organize, Discover';
-$metaDescription = 'A self-hosted YouTube video library. Watch, organize, and discover videos without distractions.';
-$canonicalUrl = SITE_URL . '/';
-
-// Include header
-include_once __DIR__ . '/../includes/header.php';
+// Ensure variables are available
+$paginatedVideos = $paginatedVideos ?? [];
+$hasMore = $hasMore ?? false;
+$page = $page ?? 1;
 ?>
-
 <div class="container">
     <!-- Hero Section -->
     <section class="hero-section fade-in">
@@ -59,7 +25,6 @@ include_once __DIR__ . '/../includes/header.php';
             </p>
             <div class="hero-actions">
                 <a href="/categories" class="btn btn-primary">Browse Categories</a>
-                <a href="/trending" class="btn btn-outline">View Trending</a>
             </div>
         </div>
     </section>
@@ -69,7 +34,7 @@ include_once __DIR__ . '/../includes/header.php';
         <div class="section-header">
             <h2 class="section-title">Latest Videos</h2>
             <div class="section-actions">
-                <a href="/latest" class="btn btn-sm btn-outline">View All →</a>
+                <span class="video-count"><?php echo count($paginatedVideos); ?> videos</span>
             </div>
         </div>
         
@@ -78,11 +43,42 @@ include_once __DIR__ . '/../includes/header.php';
                 <div class="empty-icon">📹</div>
                 <h3>No Videos Available</h3>
                 <p>There are no videos in the library yet. Check back later!</p>
+                <?php if (isAdmin()): ?>
+                    <a href="/admin/videos.php" class="btn btn-primary" style="margin-top: var(--spacing-md);">
+                        Import Videos
+                    </a>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="videos-grid" id="videoGrid">
                 <?php foreach ($paginatedVideos as $video): ?>
-                    <?php include __DIR__ . '/../includes/components/video-card.php'; ?>
+                    <a href="/watch?id=<?php echo Security::escapeHtml($video['id']); ?>" 
+                       class="video-card fade-in" 
+                       data-id="<?php echo Security::escapeHtml($video['id']); ?>"
+                       title="<?php echo Security::escapeHtml($video['title']); ?>">
+                        
+                        <div class="thumbnail">
+                            <img src="<?php echo Security::escapeHtml($video['thumbnail_url']); ?>" 
+                                 alt="<?php echo Security::escapeHtml($video['title']); ?>" 
+                                 loading="lazy"
+                                 onerror="this.src='/assets/images/default-thumbnail.jpg'">
+                            <?php if (isset($video['duration'])): ?>
+                                <span class="duration"><?php echo formatDuration($video['duration']); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="info">
+                            <div class="title"><?php echo Security::escapeHtml($video['title']); ?></div>
+                            <div class="channel"><?php echo Security::escapeHtml($video['channel_name']); ?></div>
+                            <div class="meta">
+                                <span class="views">👁️ <?php echo formatNumber($video['view_count'] ?? 0); ?></span>
+                                <?php if (isset($video['created_at'])): ?>
+                                    <span class="dot">•</span>
+                                    <span class="published"><?php echo timeAgo($video['created_at']); ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </a>
                 <?php endforeach; ?>
             </div>
             
@@ -90,7 +86,7 @@ include_once __DIR__ . '/../includes/header.php';
             <?php if ($hasMore): ?>
                 <div id="infinite-scroll-sentinel" 
                      data-page="<?php echo $page; ?>" 
-                     data-total="<?php echo $totalPages; ?>"
+                     data-total="<?php echo $totalPages ?? 1; ?>"
                      data-url="/api/videos"></div>
                 <div class="loader" id="loader" style="display: none;">
                     <div class="spinner"></div>
@@ -171,9 +167,9 @@ include_once __DIR__ . '/../includes/header.php';
     margin: 0;
 }
 
-.section-actions {
-    display: flex;
-    gap: var(--spacing-sm);
+.video-count {
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
 }
 
 /* Empty State */
@@ -189,6 +185,94 @@ include_once __DIR__ . '/../includes/header.php';
     margin-bottom: var(--spacing-md);
 }
 
+/* Videos Grid */
+.videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.video-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.video-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px var(--shadow-md);
+}
+
+.video-card .thumbnail {
+    position: relative;
+    padding-top: 56.25%;
+    background: var(--bg-secondary);
+    overflow: hidden;
+}
+
+.video-card .thumbnail img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-normal);
+}
+
+.video-card:hover .thumbnail img {
+    transform: scale(1.05);
+}
+
+.video-card .duration {
+    position: absolute;
+    bottom: var(--spacing-sm);
+    right: var(--spacing-sm);
+    padding: 2px var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-medium);
+    border-radius: var(--radius-sm);
+}
+
+.video-card .info {
+    padding: var(--spacing-md);
+}
+
+.video-card .title {
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--spacing-xs);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.video-card .channel {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.video-card .meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    color: var(--text-tertiary);
+    font-size: var(--font-size-xs);
+}
+
+.video-card .meta span {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
 /* Loader */
 .loader {
     text-align: center;
@@ -197,6 +281,12 @@ include_once __DIR__ . '/../includes/header.php';
 
 .loader .spinner {
     display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: rotate 0.8s linear infinite;
     margin-bottom: var(--spacing-md);
 }
 
@@ -220,10 +310,8 @@ include_once __DIR__ . '/../includes/header.php';
         align-items: center;
     }
     
-    .section-header {
-        flex-direction: column;
-        gap: var(--spacing-sm);
-        text-align: center;
+    .videos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     }
 }
 
@@ -236,10 +324,9 @@ include_once __DIR__ . '/../includes/header.php';
     .hero-title {
         font-size: var(--font-size-xl);
     }
+    
+    .videos-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
-
-<?php
-// Include footer
-include_once __DIR__ . '/../includes/footer.php';
-?>

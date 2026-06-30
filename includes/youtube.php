@@ -33,8 +33,18 @@ class YouTubeAPI
     public function __construct()
     {
         $settings = $this->getSettings();
-        $this->apiKey = $settings['youtube_api_key'] ?? '';
+        $this->apiKey = $settings['api_key'] ?? '';
         $this->cache = new Cache();
+    }
+    
+    /**
+     * Set API key (for testing purposes)
+     * 
+     * @param string $apiKey
+     */
+    public function setApiKey($apiKey)
+    {
+        $this->apiKey = $apiKey;
     }
     
     /**
@@ -45,6 +55,15 @@ class YouTubeAPI
     private function getSettings()
     {
         global $db;
+        
+        // Check environment variable first
+        $apiKey = $_ENV['YOUTUBE_API_KEY'] ?? null;
+        
+        if ($apiKey) {
+            return ['api_key' => $apiKey];
+        }
+        
+        // Check settings file
         $settings = $db->read('settings.json');
         return $settings['youtube'] ?? [];
     }
@@ -232,7 +251,10 @@ class YouTubeAPI
         $response = curl_exec($ch);
         $error = curl_error($ch);
         $info = curl_getinfo($ch);
-        curl_close($ch);
+        
+        // curl_close is deprecated in PHP 8.5+, but we need it for compatibility
+        // Use @ to suppress deprecation warnings
+        @curl_close($ch);
         
         if ($error) {
             throw new \Exception('cURL Error: ' . $error);
@@ -358,4 +380,3 @@ class YouTubeAPI
         }
     }
 }
-?>

@@ -8,50 +8,11 @@
  * @version 1.0.0
  */
 
-require_once __DIR__ . '/../includes/init.php';
-
 use FocusedTube\Security;
-use FocusedTube\Template;
 
-global $db;
-
-// Get categories with video counts
-$categories = $db->read('categories.json');
-$videos = $db->read('videos.json');
-$publishedVideos = array_filter($videos, function($video) {
-    return ($video['status'] ?? 'published') === 'published';
-});
-
-// Add video count to each category
-foreach ($categories as &$category) {
-    $category['video_count'] = count(array_filter($publishedVideos, function($video) use ($category) {
-        return ($video['category_id'] ?? '') === $category['id'];
-    }));
-}
-
-// Sort categories by name
-usort($categories, function($a, $b) {
-    return strcmp($a['name'], $b['name']);
-});
-
-// Set meta
-$metaTitle = 'Categories - ' . APP_NAME;
-$metaDescription = 'Browse videos by category on ' . APP_NAME;
-$canonicalUrl = SITE_URL . '/categories';
-
-// Structured Data
-$structuredData = [
-    '@context' => 'https://schema.org',
-    '@type' => 'CollectionPage',
-    'name' => 'Video Categories',
-    'description' => 'Browse videos by category',
-    'url' => $canonicalUrl
-];
-
-// Include header
-include_once __DIR__ . '/../includes/header.php';
+// Ensure variables are available
+$categories = $categories ?? [];
 ?>
-
 <div class="container">
     <div class="categories-page">
         <div class="page-header">
@@ -64,20 +25,25 @@ include_once __DIR__ . '/../includes/header.php';
                 <div class="empty-icon">🏷️</div>
                 <h3>No Categories Found</h3>
                 <p>Categories will appear here once they are added by the administrator.</p>
+                <?php if (isAdmin()): ?>
+                    <a href="/admin/categories.php" class="btn btn-primary" style="margin-top: var(--spacing-md);">
+                        Add Categories
+                    </a>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="categories-grid">
                 <?php foreach ($categories as $category): ?>
                     <a href="/categories/<?php echo Security::escapeHtml($category['slug'] ?? $category['id']); ?>" 
-                       class="category-card <?php echo $category['video_count'] > 0 ? 'has-videos' : ''; ?>">
+                       class="category-card <?php echo ($category['video_count'] ?? 0) > 0 ? 'has-videos' : ''; ?>">
                         <div class="category-icon">
                             <?php echo $category['icon'] ?? '📁'; ?>
                         </div>
                         <div class="category-info">
                             <h3 class="category-name"><?php echo Security::escapeHtml($category['name']); ?></h3>
                             <p class="category-count">
-                                <?php echo number_format($category['video_count']); ?> 
-                                <?php echo $category['video_count'] === 1 ? 'video' : 'videos'; ?>
+                                <?php echo number_format($category['video_count'] ?? 0); ?> 
+                                <?php echo ($category['video_count'] ?? 0) === 1 ? 'video' : 'videos'; ?>
                             </p>
                             <?php if (!empty($category['description'])): ?>
                                 <p class="category-description">
@@ -242,8 +208,3 @@ include_once __DIR__ . '/../includes/header.php';
     }
 }
 </style>
-
-<?php
-// Include footer
-include_once __DIR__ . '/../includes/footer.php';
-?>

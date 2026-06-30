@@ -8,194 +8,17 @@
  * @version 1.0.0
  */
 
-require_once __DIR__ . '/../includes/init.php';
-
 use FocusedTube\Security;
-use FocusedTube\Template;
 
-global $db;
-
-// Get video ID
-$videoId = isset($_GET['id']) ? Security::sanitize($_GET['id'], 'youtube_id') : '';
-
-if (empty($videoId)) {
-    header('Location: /');
-    exit;
-}
-
-// Get video data
-$video = $db->findById('videos.json', $videoId);
-
-if (!$video || ($video['status'] ?? 'published') !== 'published') {
-    // Try to import the video if it doesn't exist
-    $youtube = new \FocusedTube\YouTubeAPI();
-    try {
-        $metadata = $youtube->getVideoMetadata($videoId);
-        if ($metadata) {
-            // Import video
-            $videoData = [
-                'id' => $videoId,
-                'title' => $metadata['title'],
-                'description' => $metadata['description'],
-                'channel_id' => $metadata['channel_id'],
-                'channel_name' => $metadata['channel_name'],
-                'category_id' => $metadata['category_id'],
-                'tags' => $metadata['tags'],
-                'thumbnail_url' => $metadata['thumbnail_url'],
-                'published_at' => $metadata['published_at'],
-                'duration' => $metadata['duration'],
-                'view_count' => $metadata['view_count'],
-                'like_count' => $metadata['like_count'],
-                'comment_count' => $metadata['comment_count'],
-                'embed_url' => $metadata['embed_url'],
-                'watch_url' => $metadata['watch_url'],
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s'),
-                'status' => 'published'
-            ];
-            
-            $db->insert('videos.json', $videoData);
-            $video = $videoData;
-        } else {
-            header('Location: /404');
-            exit;
-        }
-    } catch (\Exception $e) {
-        header('Location: /404');
-        exit;
-    }
-}
-
-// Update view count
-$viewCount = ($video['view_count'] ?? 0) + 1;
-$db->updateById('videos.json', $videoId, ['view_count' => $viewCount]);
-
-// Record in history
-if (isset($_SESSION['user_id'])) {
-    $history = $db->findOne('history.json', [
-        'user_id' => $_SESSION['user_id'],
-        'video_id' => $videoId
-    ]);
-    
-    if ($history) {
-        $db->updateById('history.json', $history['id'], [
-            'timestamp' => date('Y-m-d H:i:s'),
-            'count' => ($history['count'] ?? 0) + 1
-        ]);
-    } else {
-        $db->insert('history.json', [
-            'id' => 'hist_' . uniqid(),
-            'user_id' => $_SESSION['user_id'],
-            'video_id' => $videoId,
-            'timestamp' => date('Y-m-d H:i:s'),
-            'count' => 1
-        ]);
-    }
-}
-
-// Get related videos
-$allVideos = $db->read('videos.json');
-$relatedVideos = array_filter($allVideos, function($v) use ($videoId) {
-    return ($v['id'] !== $videoId && ($v['status'] ?? 'published') === 'published');
-});
-
-// Sort related by relevance (same category, tags, etc.)
-usort($relatedVideos, function($a, $b) use ($video) {
-    $scoreA = 0;
-    $scoreB = 0;
-    
-    // Same category
-    if (isset($a['category_id']) && isset($video['category_id']) && $a['category_id'] === $video['category_id']) {
-        $scoreA += 10;
-    }
-    if (isset($b['category_id']) && isset($video['category_id']) && $b['category_id'] === $video['category_id']) {
-        $scoreB += 10;
-    }
-    
-    // Shared tags
-    if (isset($a['tags']) && isset($video['tags'])) {
-        $scoreA += count(array_intersect($a['tags'], $video['tags']));
-    }
-    if (isset($b['tags']) && isset($video['tags'])) {
-        $scoreB += count(array_intersect($b['tags'], $video['tags']));
-    }
-    
-    // View count weight
-    $scoreA += ($a['view_count'] ?? 0) / 1000;
-    $scoreB += ($b['view_count'] ?? 0) / 1000;
-    
-    return $scoreB - $scoreA;
-});
-
-$relatedVideos = array_slice($relatedVideos, 0, 10);
-
-// Get comments
-$comments = $db->read('comments.json');
-$videoComments = array_filter($comments, function($comment) use ($videoId) {
-    return $comment['video_id'] === $videoId;
-});
-
-// Sort comments by timestamp descending
-usort($videoComments, function($a, $b) {
-    return strtotime($b['created_at']) - strtotime($a['created_at']);
-});
-
-// Get like status
-$userLiked = false;
-$likeCount = $video['like_count'] ?? 0;
-if (isset($_SESSION['user_id'])) {
-    $likes = $db->read('likes.json');
-    $userLiked = !empty(array_filter($likes, function($like) use ($videoId) {
-        return $like['video_id'] === $videoId && 
-               $like['user_id'] === $_SESSION['user_id'] &&
-               $like['type'] === 'like';
-    }));
-}
-
-// Check if in favorites
-$isFavorited = false;
-$isWatchLater = false;
-if (isset($_SESSION['user_id'])) {
-    $favorites = $db->read('favorites.json');
-    $isFavorited = !empty(array_filter($favorites, function($fav) use ($videoId) {
-        return $fav['video_id'] === $videoId && 
-               $fav['user_id'] === $_SESSION['user_id'];
-    }));
-    
-    $watchLater = $db->read('watchlater.json');
-    $isWatchLater = !empty(array_filter($watchLater, function($wl) use ($videoId) {
-        return $wl['video_id'] === $videoId && 
-               $wl['user_id'] === $_SESSION['user_id'];
-    }));
-}
-
-// Set meta
-$metaTitle = Security::escapeHtml($video['title']) . ' - ' . APP_NAME;
-$metaDescription = Security::escapeHtml(substr($video['description'] ?? '', 0, 160));
-$metaImage = Security::escapeHtml($video['thumbnail_url']);
-$canonicalUrl = SITE_URL . '/watch?id=' . $videoId;
-
-// Structured Data
-$structuredData = [
-    '@context' => 'https://schema.org',
-    '@type' => 'VideoObject',
-    'name' => $video['title'],
-    'description' => $video['description'] ?? '',
-    'thumbnailUrl' => $video['thumbnail_url'],
-    'uploadDate' => $video['published_at'] ?? $video['created_at'],
-    'duration' => 'PT' . ($video['duration'] ?? 0) . 'S',
-    'embedUrl' => $video['embed_url'] ?? 'https://www.youtube.com/embed/' . $videoId,
-    'interactionCount' => $video['view_count'] ?? 0,
-    'author' => [
-        '@type' => 'Person',
-        'name' => $video['channel_name'] ?? ''
-    ]
-];
-
-// Include header
-include_once __DIR__ . '/../includes/header.php';
+// Ensure variables are available
+$video = $video ?? null;
+$videoId = $video['id'] ?? '';
+$relatedVideos = $relatedVideos ?? [];
+$videoComments = $videoComments ?? [];
+$userLiked = $userLiked ?? false;
+$isFavorited = $isFavorited ?? false;
+$isWatchLater = $isWatchLater ?? false;
 ?>
-
 <div class="container">
     <div class="watch-layout">
         <!-- Main Content -->
@@ -218,23 +41,22 @@ include_once __DIR__ . '/../includes/header.php';
                 <div class="meta">
                     <div class="channel-info">
                         <span class="channel-name"><?php echo Security::escapeHtml($video['channel_name']); ?></span>
-                        <span class="channel-subscribers"><?php echo isset($video['subscriber_count']) ? formatNumber($video['subscriber_count']) . ' subscribers' : ''; ?></span>
                     </div>
                     
                     <div class="video-stats">
                         <span class="views"><?php echo formatNumber($video['view_count'] ?? 0); ?> views</span>
                         <span class="dot">•</span>
-                        <span class="date"><?php echo date('M d, Y', strtotime($video['published_at'] ?? $video['created_at'] ?? 'now')); ?></span>
+                        <span class="date"><?php echo formatDate($video['created_at'] ?? $video['published_at'] ?? 'now'); ?></span>
                     </div>
                 </div>
                 
                 <div class="video-actions">
                     <div class="action-group">
-                        <button class="action-btn like-btn <?php echo $userLiked ? 'liked' : ''; ?>" 
+                        <button class="action-btn <?php echo $userLiked ? 'liked' : ''; ?>" 
                                 onclick="likeVideo('<?php echo $videoId; ?>')"
                                 aria-label="Like video">
                             <span class="icon">👍</span>
-                            <span class="count"><?php echo formatNumber($likeCount); ?></span>
+                            <span class="count"><?php echo formatNumber($video['like_count'] ?? 0); ?></span>
                         </button>
                         <button class="action-btn" onclick="shareVideo()" aria-label="Share video">
                             <span class="icon">📤</span>
@@ -242,7 +64,7 @@ include_once __DIR__ . '/../includes/header.php';
                         </button>
                     </div>
                     
-                    <?php if (isset($_SESSION['user_id'])): ?>
+                    <?php if (isLoggedIn()): ?>
                         <div class="action-group">
                             <button class="action-btn <?php echo $isFavorited ? 'favorited' : ''; ?>" 
                                     onclick="toggleFavorite('<?php echo $videoId; ?>')"
@@ -284,7 +106,7 @@ include_once __DIR__ . '/../includes/header.php';
                     Comments <span class="comment-count">(<?php echo count($videoComments); ?>)</span>
                 </h3>
                 
-                <?php if (isset($_SESSION['user_id'])): ?>
+                <?php if (isLoggedIn()): ?>
                     <form class="comment-form" data-video-id="<?php echo $videoId; ?>">
                         <div class="comment-input-wrapper">
                             <div class="comment-avatar">
@@ -299,7 +121,7 @@ include_once __DIR__ . '/../includes/header.php';
                     </form>
                 <?php else: ?>
                     <p class="comment-login-prompt">
-                        <a href="/admin">Sign in</a> to leave a comment
+                        <a href="/admin/login">Sign in</a> to leave a comment
                     </p>
                 <?php endif; ?>
                 
@@ -318,14 +140,6 @@ include_once __DIR__ . '/../includes/header.php';
                                         <span class="comment-time"><?php echo timeAgo($comment['created_at']); ?></span>
                                     </div>
                                     <div class="comment-text"><?php echo nl2br(Security::escapeHtml($comment['text'])); ?></div>
-                                    <div class="comment-actions">
-                                        <button onclick="likeComment('<?php echo $comment['id']; ?>')">
-                                            <span>👍</span> <span class="like-count"><?php echo $comment['likes'] ?? 0; ?></span>
-                                        </button>
-                                        <button onclick="replyComment('<?php echo $comment['id']; ?>')">
-                                            <span>💬</span> Reply
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -345,14 +159,15 @@ include_once __DIR__ . '/../includes/header.php';
                         <div class="related-thumbnail">
                             <img src="<?php echo Security::escapeHtml($related['thumbnail_url']); ?>" 
                                  alt="<?php echo Security::escapeHtml($related['title']); ?>"
-                                 loading="lazy">
+                                 loading="lazy"
+                                 onerror="this.src='/assets/images/default-thumbnail.jpg'">
                             <span class="duration"><?php echo formatDuration($related['duration'] ?? 0); ?></span>
                         </div>
                         <div class="related-info">
                             <div class="related-title"><?php echo Security::escapeHtml($related['title']); ?></div>
                             <div class="related-channel"><?php echo Security::escapeHtml($related['channel_name']); ?></div>
                             <div class="related-meta">
-                                <?php echo formatNumber($related['view_count'] ?? 0); ?> views • <?php echo timeAgo($related['published_at'] ?? $related['created_at'] ?? 'now'); ?>
+                                <?php echo formatNumber($related['view_count'] ?? 0); ?> views • <?php echo timeAgo($related['created_at'] ?? $related['published_at'] ?? 'now'); ?>
                             </div>
                         </div>
                     </a>
@@ -376,6 +191,12 @@ include_once __DIR__ . '/../includes/header.php';
 
 .video-player-wrapper {
     margin-bottom: var(--spacing-lg);
+}
+
+.video-player-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
 }
 
 .video-details .title {
@@ -404,11 +225,6 @@ include_once __DIR__ . '/../includes/header.php';
 .channel-name {
     font-weight: var(--font-semibold);
     font-size: var(--font-size-md);
-}
-
-.channel-subscribers {
-    font-size: var(--font-size-sm);
-    color: var(--text-tertiary);
 }
 
 .video-stats {
@@ -553,10 +369,6 @@ include_once __DIR__ . '/../includes/header.php';
     background: var(--bg-secondary);
     border-radius: var(--radius-sm);
     margin-bottom: var(--spacing-md);
-}
-
-.comment-login-prompt a {
-    font-weight: var(--font-medium);
 }
 
 .no-comments {
@@ -711,15 +523,9 @@ function shareVideo() {
             url: window.location.href
         }).catch(() => {});
     } else {
-        // Fallback - copy to clipboard
         navigator.clipboard.writeText(window.location.href).then(() => {
             showToast('success', 'Link copied to clipboard!');
         });
     }
 }
 </script>
-
-<?php
-// Include footer
-include_once __DIR__ . '/../includes/footer.php';
-?>

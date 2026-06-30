@@ -35,7 +35,7 @@ class Router
             'path' => $path,
             'handler' => $handler,
             'options' => $options,
-            'methods' => $options['methods'] ?? ['GET', 'POST']
+            'methods' => $options['methods'] ?? ['GET']
         ];
     }
     
@@ -61,8 +61,10 @@ class Router
         // Remove query string
         $uri = strtok($uri, '?');
         
-        // Remove trailing slash
-        $uri = rtrim($uri, '/');
+        // Remove trailing slash (except for root)
+        if ($uri !== '/') {
+            $uri = rtrim($uri, '/');
+        }
         if (empty($uri)) {
             $uri = '/';
         }
@@ -87,7 +89,11 @@ class Router
                 // Check authentication
                 if (isset($route['options']['auth']) && $route['options']['auth']) {
                     if (!isset($_SESSION['user_id'])) {
-                        header('Location: /admin/login');
+                        if (strpos($uri, '/admin') === 0) {
+                            header('Location: /admin/login');
+                        } else {
+                            header('Location: /admin/login');
+                        }
                         exit;
                     }
                 }
@@ -95,6 +101,9 @@ class Router
                 // Check role
                 if (isset($route['options']['role'])) {
                     global $auth;
+                    if (!isset($auth)) {
+                        $auth = new Auth();
+                    }
                     if (!$auth->hasRole($route['options']['role'])) {
                         Template::show403('Insufficient permissions');
                     }
@@ -120,7 +129,7 @@ class Router
     {
         $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[^/]+)', $path);
         $pattern = str_replace('/', '\/', $pattern);
-        $pattern = '/^' . $pattern . '$\/?/';
+        $pattern = '/^' . $pattern . '$/';
         return $pattern;
     }
     
@@ -132,18 +141,43 @@ class Router
      */
     private function executeHandler($handler, $params)
     {
-        list($controller, $method) = explode('@', $handler);
-        
-        $controllerClass = '\\FocusedTube\\Controllers\\' . $controller;
-        
-        if (!class_exists($controllerClass)) {
-            Template::showError('Controller not found: ' . $controllerClass);
+        // Handle API routes specially
+        if ($handler === 'ApiController@handle') {
+            // Forward to API router
+            $apiPath = '/api' . ($params['path'] ? '/' . $params['path'] : '');
+            $_GET['path'] = $params['path'] ?? '';
+            
+            // Include the API router
+            require_once __DIR__ . '/../api/index.php';
+            return;
         }
         
-        $controllerInstance = new $controllerClass();
+        list($controller, $method) = explode('@', $handler);
+        
+        // Try different namespace variations
+        $controllerClasses = [
+            '\\FocusedTube\\Controllers\\' . $controller,
+            '\\FocusedTube\\' . $controller,
+            $controller
+        ];
+        
+        $controllerInstance = null;
+        $usedClass = null;
+        
+        foreach ($controllerClasses as $class) {
+            if (class_exists($class)) {
+                $controllerInstance = new $class();
+                $usedClass = $class;
+                break;
+            }
+        }
+        
+        if (!$controllerInstance) {
+            Template::showError('Controller not found: ' . $controller);
+        }
         
         if (!method_exists($controllerInstance, $method)) {
-            Template::showError('Method not found: ' . $method);
+            Template::showError('Method not found: ' . $method . ' in ' . $usedClass);
         }
         
         // Execute middleware
@@ -189,4 +223,3 @@ class Router
         return $this->routes;
     }
 }
-?>

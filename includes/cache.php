@@ -55,7 +55,18 @@ class Cache
      */
     public function set($key, $value, $lifetime = CACHE_LIFETIME)
     {
+        if (!CACHE_ENABLED) {
+            return false;
+        }
+        
         $cacheFile = $this->getCacheFile($key);
+        
+        // Ensure directory exists
+        $dir = dirname($cacheFile);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        
         $data = [
             'expires' => time() + $lifetime,
             'data' => $value
@@ -115,16 +126,34 @@ class Cache
      */
     public function clear()
     {
-        $files = glob($this->cachePath . '/*.cache');
-        $success = true;
-        
-        foreach ($files as $file) {
-            if (is_file($file) && !unlink($file)) {
-                $success = false;
-            }
+        $this->clearDirectory($this->cachePath);
+        return true;
+    }
+    
+    /**
+     * Recursively clear directory
+     * 
+     * @param string $dir
+     */
+    private function clearDirectory($dir)
+    {
+        if (!is_dir($dir)) {
+            return;
         }
         
-        return $success;
+        $files = scandir($dir);
+        foreach ($files as $file) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+            $path = $dir . '/' . $file;
+            if (is_dir($path)) {
+                $this->clearDirectory($path);
+                rmdir($path);
+            } else {
+                unlink($path);
+            }
+        }
     }
     
     /**
@@ -136,7 +165,14 @@ class Cache
     private function getCacheFile($key)
     {
         $hash = md5($key);
-        return $this->cachePath . '/' . substr($hash, 0, 2) . '/' . $hash . '.cache';
+        $subDir = substr($hash, 0, 2);
+        $dir = $this->cachePath . '/' . $subDir;
+        
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        
+        return $dir . '/' . $hash . '.cache';
     }
     
     /**
@@ -259,4 +295,3 @@ class Cache
         return round($bytes, 2) . ' ' . $units[$i];
     }
 }
-?>
