@@ -11,7 +11,6 @@
 namespace FocusedTube\Controllers;
 
 use FocusedTube\Security;
-use FocusedTube\YouTubeAPI;
 
 class WatchController extends Controller
 {
@@ -34,51 +33,15 @@ class WatchController extends Controller
         $video = $this->db->findById('videos.json', $videoId);
         
         if (!$video || ($video['status'] ?? 'published') !== 'published') {
-            // Try to import the video if it doesn't exist
-            try {
-                $youtube = new YouTubeAPI();
-                $metadata = $youtube->getVideoMetadata($videoId);
-                
-                if ($metadata) {
-                    // Import video
-                    $videoData = [
-                        'id' => $videoId,
-                        'title' => $metadata['title'],
-                        'description' => $metadata['description'],
-                        'channel_id' => $metadata['channel_id'],
-                        'channel_name' => $metadata['channel_name'],
-                        'category_id' => $metadata['category_id'],
-                        'tags' => $metadata['tags'],
-                        'thumbnail_url' => $metadata['thumbnail_url'],
-                        'published_at' => $metadata['published_at'],
-                        'duration' => $metadata['duration'],
-                        'view_count' => $metadata['view_count'],
-                        'like_count' => $metadata['like_count'],
-                        'comment_count' => $metadata['comment_count'],
-                        'embed_url' => $metadata['embed_url'],
-                        'watch_url' => $metadata['watch_url'],
-                        'created_at' => date('Y-m-d H:i:s'),
-                        'updated_at' => date('Y-m-d H:i:s'),
-                        'status' => 'published'
-                    ];
-                    
-                    $this->db->insert('videos.json', $videoData);
-                    $video = $videoData;
-                } else {
-                    header('Location: /404');
-                    exit;
-                }
-            } catch (\Exception $e) {
-                header('Location: /404');
-                exit;
-            }
+            header('Location: /404');
+            exit;
         }
         
         // Update view count
         $viewCount = ($video['view_count'] ?? 0) + 1;
         $this->db->updateById('videos.json', $videoId, ['view_count' => $viewCount]);
         
-        // Record in history
+        // Record in history if user is logged in
         if ($this->isLoggedIn()) {
             $user = $this->getUser();
             $history = $this->db->findOne('history.json', [
@@ -145,38 +108,11 @@ class WatchController extends Controller
             return strtotime($b['created_at']) - strtotime($a['created_at']);
         });
         
-        // Get user interaction status
-        $userLiked = false;
-        $isFavorited = false;
-        $isWatchLater = false;
-        
-        if ($this->isLoggedIn()) {
-            $user = $this->getUser();
-            
-            $likes = $this->db->read('likes.json');
-            $userLiked = !empty(array_filter($likes, function($like) use ($videoId, $user) {
-                return $like['video_id'] === $videoId && 
-                       $like['user_id'] === $user['id'] &&
-                       $like['type'] === 'like';
-            }));
-            
-            $favorites = $this->db->read('favorites.json');
-            $isFavorited = !empty(array_filter($favorites, function($fav) use ($videoId, $user) {
-                return $fav['video_id'] === $videoId && 
-                       $fav['user_id'] === $user['id'];
-            }));
-            
-            $watchLater = $this->db->read('watchlater.json');
-            $isWatchLater = !empty(array_filter($watchLater, function($wl) use ($videoId, $user) {
-                return $wl['video_id'] === $videoId && 
-                       $wl['user_id'] === $user['id'];
-            }));
-        }
-        
         // Set meta
         $metaTitle = Security::escapeHtml($video['title']) . ' - ' . APP_NAME;
         $metaDescription = Security::escapeHtml(substr($video['description'] ?? '', 0, 160));
         $metaImage = Security::escapeHtml($video['thumbnail_url']);
+        $canonicalUrl = SITE_URL . '/watch?id=' . $videoId;
         
         // Structured Data
         $structuredData = [
@@ -196,12 +132,12 @@ class WatchController extends Controller
         ];
         
         // Include header
-        include_once __DIR__ . '/../header.php';
+        require_once INCLUDES_PATH . '/header.php';
         
         // Include watch page content
-        include_once __DIR__ . '/../../pages/watch.php';
+        require_once PAGES_PATH . '/watch.php';
         
         // Include footer
-        include_once __DIR__ . '/../footer.php';
+        require_once INCLUDES_PATH . '/footer.php';
     }
 }

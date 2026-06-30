@@ -118,12 +118,12 @@ class SearchController extends Controller
         $metaDescription = $query ? "Search results for '{$query}'" : "Search for videos";
         
         // Include header
-        include_once __DIR__ . '/../header.php';
+        require_once INCLUDES_PATH . '/header.php';
         
         // Include search page content
-        include_once __DIR__ . '/../../pages/search.php';
+        require_once PAGES_PATH . '/search.php';
         
         // Include footer
-        include_once __DIR__ . '/../footer.php';
+        require_once INCLUDES_PATH . '/footer.php';
     }
 }

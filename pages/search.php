@@ -8,115 +8,18 @@
  * @version 1.0.0
  */
 
-require_once __DIR__ . '/../includes/init.php';
-
 use FocusedTube\Security;
-use FocusedTube\Template;
 
-global $db;
-
-// Get search parameters
-$query = isset($_GET['q']) ? Security::sanitize($_GET['q']) : '';
-$category = isset($_GET['category']) ? Security::sanitize($_GET['category']) : '';
-$sort = isset($_GET['sort']) ? Security::sanitize($_GET['sort']) : 'relevance';
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$perPage = ITEMS_PER_PAGE;
-
-// Get all published videos
-$videos = $db->read('videos.json');
-$videos = array_filter($videos, function($video) {
-    return ($video['status'] ?? 'published') === 'published';
-});
-
-// Search
-if ($query) {
-    $searchTerms = explode(' ', strtolower($query));
-    $videos = array_filter($videos, function($video) use ($searchTerms) {
-        $title = strtolower($video['title'] ?? '');
-        $description = strtolower($video['description'] ?? '');
-        $channel = strtolower($video['channel_name'] ?? '');
-        $tags = array_map('strtolower', $video['tags'] ?? []);
-        
-        foreach ($searchTerms as $term) {
-            if (strpos($title, $term) !== false ||
-                strpos($description, $term) !== false ||
-                strpos($channel, $term) !== false) {
-                return true;
-            }
-            foreach ($tags as $tag) {
-                if (strpos($tag, $term) !== false) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    });
-}
-
-// Filter by category
-if ($category) {
-    $videos = array_filter($videos, function($video) use ($category) {
-        return ($video['category_id'] ?? '') === $category;
-    });
-}
-
-// Sort
-switch ($sort) {
-    case 'newest':
-        usort($videos, function($a, $b) {
-            $timeA = strtotime($a['created_at'] ?? $a['published_at'] ?? 'now');
-            $timeB = strtotime($b['created_at'] ?? $b['published_at'] ?? 'now');
-            return $timeB - $timeA;
-        });
-        break;
-    case 'oldest':
-        usort($videos, function($a, $b) {
-            $timeA = strtotime($a['created_at'] ?? $a['published_at'] ?? 'now');
-            $timeB = strtotime($b['created_at'] ?? $b['published_at'] ?? 'now');
-            return $timeA - $timeB;
-        });
-        break;
-    case 'views':
-        usort($videos, function($a, $b) {
-            return ($b['view_count'] ?? 0) - ($a['view_count'] ?? 0);
-        });
-        break;
-    case 'relevance':
-    default:
-        // Keep current order (relevance by matching title)
-        if ($query) {
-            $queryLower = strtolower($query);
-            usort($videos, function($a, $b) use ($queryLower) {
-                $aTitle = strtolower($a['title'] ?? '');
-                $bTitle = strtolower($b['title'] ?? '');
-                $aScore = strpos($aTitle, $queryLower) !== false ? 1 : 0;
-                $bScore = strpos($bTitle, $queryLower) !== false ? 1 : 0;
-                return $bScore - $aScore;
-            });
-        }
-        break;
-}
-
-// Paginate
-$totalVideos = count($videos);
-$totalPages = ceil($totalVideos / $perPage);
-$page = max(1, min($page, $totalPages));
-$offset = ($page - 1) * $perPage;
-$paginatedVideos = array_slice($videos, $offset, $perPage);
-$hasMore = $page < $totalPages;
-
-// Get categories for filter
-$categories = $db->read('categories.json');
-
-// Set meta
-$metaTitle = ($query ? "Search: {$query} - " : "") . APP_NAME;
-$metaDescription = $query ? "Search results for '{$query}'" : "Search for videos";
-$canonicalUrl = SITE_URL . '/search?' . http_build_query($_GET);
-
-// Include header
-include_once __DIR__ . '/../includes/header.php';
+// Ensure variables are available
+$paginatedVideos = $paginatedVideos ?? [];
+$totalVideos = $totalVideos ?? 0;
+$query = $query ?? '';
+$category = $category ?? '';
+$sort = $sort ?? 'relevance';
+$page = $page ?? 1;
+$totalPages = $totalPages ?? 1;
+$categories = $categories ?? [];
 ?>
-
 <div class="container">
     <div class="search-page">
         <!-- Search Header -->
@@ -179,7 +82,33 @@ include_once __DIR__ . '/../includes/header.php';
         <?php else: ?>
             <div class="videos-grid" id="videoGrid">
                 <?php foreach ($paginatedVideos as $video): ?>
-                    <?php include __DIR__ . '/../includes/components/video-card.php'; ?>
+                    <a href="/watch?id=<?php echo Security::escapeHtml($video['id']); ?>" 
+                       class="video-card fade-in" 
+                       data-id="<?php echo Security::escapeHtml($video['id']); ?>"
+                       title="<?php echo Security::escapeHtml($video['title']); ?>">
+                        
+                        <div class="thumbnail">
+                            <img src="<?php echo Security::escapeHtml($video['thumbnail_url']); ?>" 
+                                 alt="<?php echo Security::escapeHtml($video['title']); ?>" 
+                                 loading="lazy"
+                                 onerror="this.src='/assets/images/default-thumbnail.jpg'">
+                            <?php if (isset($video['duration'])): ?>
+                                <span class="duration"><?php echo formatDuration($video['duration']); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="info">
+                            <div class="title"><?php echo Security::escapeHtml($video['title']); ?></div>
+                            <div class="channel"><?php echo Security::escapeHtml($video['channel_name']); ?></div>
+                            <div class="meta">
+                                <span class="views">👁️ <?php echo formatNumber($video['view_count'] ?? 0); ?></span>
+                                <?php if (isset($video['created_at'])): ?>
+                                    <span class="dot">•</span>
+                                    <span class="published"><?php echo timeAgo($video['created_at']); ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </a>
                 <?php endforeach; ?>
             </div>
             
@@ -278,6 +207,94 @@ include_once __DIR__ . '/../includes/header.php';
     border-color: var(--primary-color);
 }
 
+.videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.video-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.video-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px var(--shadow-md);
+}
+
+.video-card .thumbnail {
+    position: relative;
+    padding-top: 56.25%;
+    background: var(--bg-secondary);
+    overflow: hidden;
+}
+
+.video-card .thumbnail img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-normal);
+}
+
+.video-card:hover .thumbnail img {
+    transform: scale(1.05);
+}
+
+.video-card .duration {
+    position: absolute;
+    bottom: var(--spacing-sm);
+    right: var(--spacing-sm);
+    padding: 2px var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-medium);
+    border-radius: var(--radius-sm);
+}
+
+.video-card .info {
+    padding: var(--spacing-md);
+}
+
+.video-card .title {
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--spacing-xs);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.video-card .channel {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.video-card .meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    color: var(--text-tertiary);
+    font-size: var(--font-size-xs);
+}
+
+.video-card .meta span {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
 .empty-state {
     text-align: center;
     padding: var(--spacing-3xl) var(--spacing-xl);
@@ -313,10 +330,15 @@ include_once __DIR__ . '/../includes/header.php';
         width: 100%;
         min-width: auto;
     }
+    
+    .videos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .videos-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
-
-<?php
-// Include footer
-include_once __DIR__ . '/../includes/footer.php';
-?>

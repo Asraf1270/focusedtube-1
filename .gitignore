@@ -1,4 +1,14 @@
 includes/config.php
 test-youtube-api.php
+data/
+backups/
+cache/
+logs/
+sessions/
 **/*.log
 **/*.json
+test-home.php
+test-watch.php
+fix-pages.sh
+test-autoload.php
+test-router.php

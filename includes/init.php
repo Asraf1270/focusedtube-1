@@ -46,14 +46,28 @@ spl_autoload_register(function($class) {
     // Convert namespace separators to directory separators
     $file = __DIR__ . '/' . str_replace('\\', '/', $relative_class) . '.php';
     
-    // Also check in controllers directory
+    // If not found, check in controllers directory (includes/controllers/)
     if (!file_exists($file)) {
         $file = __DIR__ . '/controllers/' . str_replace('\\', '/', $relative_class) . '.php';
     }
     
+    // If still not found, try removing the Controllers namespace part
+    if (!file_exists($file)) {
+        $parts = explode('\\', $relative_class);
+        // If the first part is 'Controllers', remove it
+        if ($parts[0] === 'Controllers') {
+            array_shift($parts);
+            $newClass = implode('/', $parts);
+            $file = __DIR__ . '/controllers/' . $newClass . '.php';
+        }
+    }
+    
     if (file_exists($file)) {
         require_once $file;
+        return true;
     }
+    
+    return false;
 });
 
 // ============================================

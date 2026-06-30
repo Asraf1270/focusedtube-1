@@ -9,12 +9,11 @@
  */
 
 use FocusedTube\Security;
-use FocusedTube\Auth;
 
-// Initialize auth if not already done
+// Ensure auth is available
 global $auth;
 if (!isset($auth)) {
-    $auth = new Auth();
+    $auth = new \FocusedTube\Auth();
 }
 
 $currentUser = $auth->getUser();
@@ -32,6 +31,14 @@ $metaTitle = $metaTitle ?? APP_NAME;
 $metaDescription = $metaDescription ?? APP_DESCRIPTION;
 $metaImage = $metaImage ?? SITE_URL . '/assets/images/logo.png';
 $canonicalUrl = $canonicalUrl ?? SITE_URL . $_SERVER['REQUEST_URI'];
+
+// Get video count
+global $db;
+$videos = $db->read('videos.json');
+$videoCount = count($videos);
+
+// Get categories
+$categories = $db->read('categories.json');
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="<?php echo $theme; ?>">
@@ -61,7 +68,6 @@ $canonicalUrl = $canonicalUrl ?? SITE_URL . $_SERVER['REQUEST_URI'];
     
     <!-- Icons -->
     <link rel="icon" href="/assets/images/favicon.ico" sizes="any">
-    <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="/assets/css/style.css">
@@ -92,7 +98,7 @@ $canonicalUrl = $canonicalUrl ?? SITE_URL . $_SERVER['REQUEST_URI'];
             <div class="navbar-container">
                 <!-- Brand/Logo -->
                 <a href="/" class="navbar-brand" aria-label="<?php echo APP_NAME; ?> Home">
-                    <img src="/assets/images/logo.svg" alt="<?php echo APP_NAME; ?>" width="32" height="32">
+                    <span style="font-size: 28px;">🎬</span>
                     <span class="brand-text"><?php echo APP_NAME; ?></span>
                 </a>
                 
@@ -120,14 +126,8 @@ $canonicalUrl = $canonicalUrl ?? SITE_URL . $_SERVER['REQUEST_URI'];
                     </button>
                     
                     <?php if ($isLoggedIn): ?>
-                        <button class="btn-icon" onclick="openModal('notificationsModal')" aria-label="Notifications" title="Notifications">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                            </svg>
-                            <span class="notification-dot" style="display: none;"></span>
-                        </button>
-                        
+                        <a href="/watch-later" class="btn-icon" title="Watch Later">⏰</a>
+                        <a href="/favorites" class="btn-icon" title="Favorites">⭐</a>
                         <div class="dropdown">
                             <button class="btn-icon" onclick="toggleDropdown('userDropdown')" aria-label="User menu" title="User menu">
                                 <div class="user-avatar" style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">
@@ -135,7 +135,7 @@ $canonicalUrl = $canonicalUrl ?? SITE_URL . $_SERVER['REQUEST_URI'];
                                 </div>
                             </button>
                             <div id="userDropdown" class="dropdown-menu">
-                                <div class="dropdown-item" style="padding: var(--spacing-sm) var(--spacing-md);">
+                                <div style="padding: var(--spacing-sm) var(--spacing-md);">
                                     <div style="font-weight: var(--font-semibold);"><?php echo Security::escapeHtml($currentUser['username'] ?? $currentUser['email']); ?></div>
                                     <div style="font-size: var(--font-size-xs); color: var(--text-tertiary);"><?php echo Security::escapeHtml($currentUser['email']); ?></div>
                                 </div>
@@ -156,7 +156,7 @@ $canonicalUrl = $canonicalUrl ?? SITE_URL . $_SERVER['REQUEST_URI'];
                             </div>
                         </div>
                     <?php else: ?>
-                        <a href="/admin" class="btn btn-primary btn-sm">Sign In</a>
+                        <a href="/admin/login" class="btn btn-primary btn-sm">Sign In</a>
                     <?php endif; ?>
                 </div>
             </div>

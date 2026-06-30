@@ -10,8 +10,6 @@
 
 namespace FocusedTube\Controllers;
 
-use FocusedTube\Template;
-
 class HomeController extends Controller
 {
     /**
@@ -50,14 +48,15 @@ class HomeController extends Controller
         // Set meta
         $metaTitle = APP_NAME . ' - Watch, Organize, Discover';
         $metaDescription = 'A self-hosted YouTube video library. Watch, organize, and discover videos without distractions.';
+        $canonicalUrl = SITE_URL . '/';
         
         // Include header
-        include_once __DIR__ . '/../header.php';
+        require_once INCLUDES_PATH . '/header.php';
         
         // Include home page content
-        include_once __DIR__ . '/../../pages/home.php';
+        require_once PAGES_PATH . '/home.php';
         
         // Include footer
-        include_once __DIR__ . '/../footer.php';
+        require_once INCLUDES_PATH . '/footer.php';
     }
 }

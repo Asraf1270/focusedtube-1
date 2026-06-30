@@ -154,16 +154,30 @@ class Router
         
         list($controller, $method) = explode('@', $handler);
         
-        $controllerClass = '\\FocusedTube\\Controllers\\' . $controller;
+        // Try different namespace variations
+        $controllerClasses = [
+            '\\FocusedTube\\Controllers\\' . $controller,
+            '\\FocusedTube\\' . $controller,
+            $controller
+        ];
         
-        if (!class_exists($controllerClass)) {
-            Template::showError('Controller not found: ' . $controllerClass);
+        $controllerInstance = null;
+        $usedClass = null;
+        
+        foreach ($controllerClasses as $class) {
+            if (class_exists($class)) {
+                $controllerInstance = new $class();
+                $usedClass = $class;
+                break;
+            }
         }
         
-        $controllerInstance = new $controllerClass();
+        if (!$controllerInstance) {
+            Template::showError('Controller not found: ' . $controller);
+        }
         
         if (!method_exists($controllerInstance, $method)) {
-            Template::showError('Method not found: ' . $method);
+            Template::showError('Method not found: ' . $method . ' in ' . $usedClass);
         }
         
         // Execute middleware

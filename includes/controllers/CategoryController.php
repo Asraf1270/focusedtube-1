@@ -45,23 +45,14 @@ class CategoryController extends Controller
         $metaTitle = 'Categories - ' . APP_NAME;
         $metaDescription = 'Browse videos by category on ' . APP_NAME;
         
-        // Structured Data
-        $structuredData = [
-            '@context' => 'https://schema.org',
-            '@type' => 'CollectionPage',
-            'name' => 'Video Categories',
-            'description' => 'Browse videos by category',
-            'url' => SITE_URL . '/categories'
-        ];
-        
         // Include header
-        include_once __DIR__ . '/../header.php';
+        require_once INCLUDES_PATH . '/header.php';
         
         // Include categories page content
-        include_once __DIR__ . '/../../pages/categories.php';
+        require_once PAGES_PATH . '/categories.php';
         
         // Include footer
-        include_once __DIR__ . '/../footer.php';
+        require_once INCLUDES_PATH . '/footer.php';
     }
     
     /**
@@ -123,22 +114,13 @@ class CategoryController extends Controller
         $metaTitle = Security::escapeHtml($category['name']) . ' - ' . APP_NAME;
         $metaDescription = Security::escapeHtml($category['description'] ?? "Watch videos in the {$category['name']} category on " . APP_NAME);
         
-        // Structured Data
-        $structuredData = [
-            '@context' => 'https://schema.org',
-            '@type' => 'CollectionPage',
-            'name' => $category['name'],
-            'description' => $category['description'] ?? '',
-            'url' => SITE_URL . '/categories/' . $slug
-        ];
-        
         // Include header
-        include_once __DIR__ . '/../header.php';
+        require_once INCLUDES_PATH . '/header.php';
         
         // Include category page content
-        include_once __DIR__ . '/../../pages/category.php';
+        require_once PAGES_PATH . '/category.php';
         
         // Include footer
-        include_once __DIR__ . '/../footer.php';
+        require_once INCLUDES_PATH . '/footer.php';
     }
 }
