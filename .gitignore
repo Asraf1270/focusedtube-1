@@ -1,1 +1,4 @@
 includes/config.php
+test-youtube-api.php
+**/*.log
+**/*.json

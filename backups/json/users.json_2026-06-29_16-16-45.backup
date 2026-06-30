@@ -10,8 +10,8 @@
         "bio": "",
         "created_at": "2026-06-29 16:16:45",
         "updated_at": "2026-06-29 16:16:45",
-        "last_login": "2026-06-30 04:32:36",
-        "last_ip": "127.0.0.1",
+        "last_login": null,
+        "last_ip": null,
         "settings": {
             "theme": "light",
             "language": "en",

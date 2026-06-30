@@ -1,1 +1,21 @@
-[]
+{
+    "general": {
+        "timezone": "UTC",
+        "language": "en",
+        "site_name": "FocusedTube"
+    },
+    "youtube": {
+        "api_key": "YOUR_YOUTUBE_API_KEY_HERE",
+        "api_url": "https://www.googleapis.com/youtube/v3/"
+    },
+    "maintenance": {
+        "enabled": false,
+        "message": "We are currently performing maintenance. Please check back soon.",
+        "exempt_ips": []
+    },
+    "theme": {
+        "primary_color": "#FF3D00",
+        "secondary_color": "#1E293B",
+        "dark_mode": false
+    }
+}

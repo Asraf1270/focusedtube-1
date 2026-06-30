@@ -1,0 +1,11 @@
+[
+    {
+        "id": "act_6a429a6d23e6d",
+        "user_id": "user_6a429a6ccd764",
+        "action": "Registration",
+        "description": "User registered",
+        "ip": "127.0.0.1",
+        "user_agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0",
+        "timestamp": "2026-06-29 16:16:45"
+    }
+]

@@ -25,14 +25,5 @@
         "ip": "127.0.0.1",
         "user_agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0",
         "timestamp": "2026-06-29 16:22:18"
-    },
-    {
-        "id": "act_6a4346e4dbe9b",
-        "user_id": "user_6a429a6ccd764",
-        "action": "Login",
-        "description": "User logged in",
-        "ip": "127.0.0.1",
-        "user_agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0",
-        "timestamp": "2026-06-30 04:32:36"
     }
 ]
