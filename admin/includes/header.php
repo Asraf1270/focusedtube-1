@@ -45,7 +45,11 @@ $csrfToken = $_SESSION['csrf_token'] ?? Security::generateCsrfToken();
         <!-- Sidebar -->
         <aside class="admin-sidebar" id="adminSidebar">
             <div class="admin-sidebar-brand">
-                <img src="/assets/images/logo.svg" alt="FocusedTube">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024" style="width: 32px; height: 32px;">
+                    <rect x="25" y="20" width="1486" height="984" rx="180" ry="180" fill="#FF0000"/>
+                    <circle cx="768" cy="512" r="200" fill="none" stroke="#F2F2F2" stroke-width="55"/>
+                    <path fill="#F2F2F2" d="M882 90 C822 90 782 150 782 260 L782 760 C782 870 742 930 672 930 L622 930 L622 855 L672 855 C707 855 727 830 727 760 L727 260 C727 120 802 35 907 35 L977 35 L977 110 L907 110 C887 110 882 115 882 140 Z"/>
+                </svg>
                 <span><span class="brand-text">Focused</span>Tube</span>
             </div>
             
@@ -183,6 +187,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? Security::generateCsrfToken();
                     <?php foreach ($_SESSION['flash'] as $type => $message): ?>
                         <div class="alert alert-<?php echo $type; ?> fade-in">
                             <?php echo Security::escapeHtml($message); ?>
+                            <button class="alert-close" onclick="this.parentElement.remove()">×</button>
                         </div>
                     <?php endforeach; ?>
                     <?php unset($_SESSION['flash']); ?>
