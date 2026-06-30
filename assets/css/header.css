@@ -1,0 +1,396 @@
+/**
+ * FocusedTube - Header Styles
+ * 
+ * Mobile-first header with hamburger menu and PWA install button
+ * 
+ * @package FocusedTube
+ * @version 1.0.0
+ */
+
+/* ============================================
+   HAMBURGER MENU TOGGLE
+   ============================================ */
+
+.hamburger-toggle {
+    display: none;
+    background: none;
+    border: none;
+    padding: var(--spacing-sm);
+    cursor: pointer;
+    z-index: var(--z-dropdown);
+    position: relative;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .hamburger-toggle {
+        display: flex;
+    }
+}
+
+.hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 24px;
+    transition: all var(--transition-normal);
+}
+
+.hamburger-icon span {
+    display: block;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: all var(--transition-normal);
+    transform-origin: center;
+}
+
+.hamburger-toggle.active .hamburger-icon span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-toggle.active .hamburger-icon span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.hamburger-toggle.active .hamburger-icon span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* ============================================
+   MOBILE MENU
+   ============================================ */
+
+.mobile-menu {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-primary);
+    z-index: var(--z-modal);
+    padding-top: 60px;
+    overflow-y: auto;
+    animation: slideInRight 0.3s ease;
+}
+
+.mobile-menu.open {
+    display: block;
+}
+
+@media (min-width: 769px) {
+    .mobile-menu {
+        display: none !important;
+    }
+}
+
+.mobile-menu-content {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+/* Mobile Search */
+.mobile-search {
+    margin-bottom: var(--spacing-sm);
+}
+
+.mobile-search form {
+    display: flex;
+    position: relative;
+    width: 100%;
+}
+
+.mobile-search input {
+    width: 100%;
+    padding: var(--spacing-md) var(--spacing-lg);
+    padding-right: 48px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+}
+
+.mobile-search input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: var(--bg-primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+}
+
+.mobile-search button {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: var(--spacing-sm);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.mobile-search button:hover {
+    color: var(--primary-color);
+}
+
+.mobile-search button svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Mobile Navigation Links */
+.mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--spacing-md);
+}
+
+.mobile-nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: var(--font-size-md);
+    transition: all var(--transition-fast);
+}
+
+.mobile-nav-link:hover {
+    background: var(--bg-secondary);
+}
+
+.mobile-nav-link.active {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+    font-weight: var(--font-medium);
+}
+
+/* Mobile User Actions */
+.mobile-user-actions {
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--spacing-md);
+}
+
+.mobile-user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.mobile-user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-bold);
+    flex-shrink: 0;
+}
+
+.mobile-user-name {
+    font-weight: var(--font-semibold);
+    font-size: var(--font-size-md);
+}
+
+.mobile-user-email {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.mobile-user-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.mobile-user-links a {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-fast);
+}
+
+.mobile-user-links a:hover {
+    background: var(--bg-secondary);
+}
+
+.mobile-signup-text {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-sm);
+}
+
+/* Mobile Theme Toggle */
+.mobile-theme-toggle {
+    border-top: 1px solid var(--border-color);
+    padding-top: var(--spacing-md);
+}
+
+.mobile-theme-toggle .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: var(--font-size-md);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: all var(--transition-fast);
+}
+
+.mobile-theme-toggle .theme-toggle:hover {
+    background: var(--bg-secondary);
+}
+
+/* ============================================
+   PWA INSTALL BUTTON
+   ============================================ */
+
+.pwa-install-btn {
+    display: none !important;
+    animation: pulse 2s infinite;
+}
+
+.pwa-install-btn.visible {
+    display: inline-flex !important;
+}
+
+.pwa-install-btn-mobile.visible {
+    display: flex !important;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+/* ============================================
+   DESKTOP ACTIONS
+   ============================================ */
+
+.desktop-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+@media (max-width: 768px) {
+    .desktop-actions {
+        display: none;
+    }
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+@media (max-width: 768px) {
+    .navbar-container {
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+    
+    .navbar-brand {
+        order: 1;
+    }
+    
+    .navbar-search {
+        order: 3;
+        flex: 1 1 100%;
+        margin-top: var(--spacing-xs);
+    }
+    
+    .hamburger-toggle {
+        order: 2;
+    }
+    
+    .navbar-actions {
+        order: 4;
+    }
+    
+    .navbar-actions .btn-icon {
+        width: 36px;
+        height: 36px;
+        font-size: var(--font-size-md);
+    }
+}
+
+@media (min-width: 769px) {
+    .navbar-search {
+        flex: 1;
+        max-width: 600px;
+    }
+    
+    .hamburger-toggle {
+        display: none !important;
+    }
+    
+    .mobile-menu {
+        display: none !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar-brand .brand-text {
+        font-size: var(--font-size-sm);
+    }
+    
+    .navbar-brand svg {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .navbar-search input {
+        height: 32px;
+        font-size: var(--font-size-sm);
+        padding: var(--spacing-xs) var(--spacing-md);
+        padding-right: 36px;
+    }
+    
+    .navbar-search .search-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .mobile-menu-content {
+        padding: var(--spacing-md);
+    }
+}

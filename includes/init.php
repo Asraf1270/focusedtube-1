@@ -201,3 +201,8 @@ if ($shouldLog && !isset($_SESSION['admin_logged_in'])) {
            $_SERVER['REQUEST_METHOD'] . " " . $requestUri . "\n";
     @file_put_contents(LOGS_PATH . '/access.log', $log, FILE_APPEND);
 }
+
+// At the end of the file, add this:
+$extraScripts = [
+    '/assets/js/header.js'
+];
