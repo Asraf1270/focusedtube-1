@@ -2,7 +2,7 @@
 /**
  * FocusedTube - Public Header
  * 
- * Header template for public-facing pages
+ * Header template for public-facing pages with custom logo
  * 
  * @package FocusedTube
  * @version 1.0.0
@@ -36,9 +36,6 @@ $canonicalUrl = $canonicalUrl ?? SITE_URL . $_SERVER['REQUEST_URI'];
 global $db;
 $videos = $db->read('videos.json');
 $videoCount = count($videos);
-
-// Get categories
-$categories = $db->read('categories.json');
 ?>
 <!DOCTYPE html>
 <html lang="en" data-theme="<?php echo $theme; ?>">
@@ -96,10 +93,19 @@ $categories = $db->read('categories.json');
     <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="container">
             <div class="navbar-container">
-                <!-- Brand/Logo -->
+                <!-- Brand/Logo with Custom SVG -->
                 <a href="/" class="navbar-brand" aria-label="<?php echo APP_NAME; ?> Home">
-                    <span style="font-size: 28px;">🎬</span>
-                    <span class="brand-text"><?php echo APP_NAME; ?></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024" style="width: 36px; height: 36px;">
+                        <!-- Background -->
+                        <rect x="25" y="20" width="1486" height="984" rx="180" ry="180" fill="#FF0000"/>
+                        <!-- Centered Circle -->
+                        <circle cx="768" cy="512" r="200" fill="none" stroke="#F2F2F2" stroke-width="55"/>
+                        <!-- Integration Symbol -->
+                        <path fill="#F2F2F2" d="M882 90 C822 90 782 150 782 260 L782 760 C782 870 742 930 672 930 L622 930 L622 855 L672 855 C707 855 727 830 727 760 L727 260 C727 120 802 35 907 35 L977 35 L977 110 L907 110 C887 110 882 115 882 140 Z"/>
+                    </svg>
+                    <span class="brand-text">
+                        <span class="highlight">Focused</span>Tube
+                    </span>
                 </a>
                 
                 <!-- Search -->
@@ -110,7 +116,7 @@ $categories = $db->read('categories.json');
                                aria-label="Search for videos"
                                value="<?php echo isset($_GET['q']) ? Security::escapeHtml($_GET['q']) : ''; ?>">
                         <button type="submit" class="search-btn" aria-label="Submit search">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"/>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                             </svg>
@@ -126,11 +132,11 @@ $categories = $db->read('categories.json');
                     </button>
                     
                     <?php if ($isLoggedIn): ?>
-                        <a href="/watch-later" class="btn-icon" title="Watch Later">⏰</a>
-                        <a href="/favorites" class="btn-icon" title="Favorites">⭐</a>
+                        <a href="/watch-later" class="btn-icon" title="Watch Later" aria-label="Watch Later">⏰</a>
+                        <a href="/favorites" class="btn-icon" title="Favorites" aria-label="Favorites">⭐</a>
                         <div class="dropdown">
                             <button class="btn-icon" onclick="toggleDropdown('userDropdown')" aria-label="User menu" title="User menu">
-                                <div class="user-avatar" style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">
+                                <div class="user-avatar">
                                     <?php echo strtoupper(substr($currentUser['username'] ?? $currentUser['email'] ?? 'U', 0, 1)); ?>
                                 </div>
                             </button>
