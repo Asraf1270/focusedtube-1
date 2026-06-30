@@ -77,6 +77,10 @@ $isLoggedIn = $auth->isLoggedIn();
     <div class="toast-container"></div>
     
     <!-- JavaScript -->
+     <!-- JavaScript -->
+<script src="/assets/js/main.js" type="module"></script>
+<script src="/assets/js/header.js"></script>
+<?php if (isset($extraScripts)) echo $extraScripts; ?>
     <script src="/assets/js/main.js" type="module"></script>
     <?php if (isset($extraScripts)) echo $extraScripts; ?>
     
